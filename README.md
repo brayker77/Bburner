@@ -1,66 +1,162 @@
-📦 Codex Scaffold Context
+Bitburner Script Commands
 
-This project assumes Codex is used to help generate or refactor Bitburner scaffolds. To ensure Codex understands the complete game context, the following assumptions and baseline structure are provided:
+This document outlines how to use each script in your Scriptcore suite. All scripts are written for the Bitburner game environment and depend on the ns object provided by the game API.
 
-Core Components to Generate:
+🟢 ready.js
 
-ready.js: scans and roots all reachable servers; copies h/g/w scripts to valid hosts
+Purpose: Scans the network and nukes all servers you have port tools for. Automatically pushes h.js, g.js, and w.js to new targets.
 
-set.js: scores rooted servers by money/sec/sec and writes to strategy.json
+Run with:
 
-go.js: reads strategy and deploys h/g/w workers to valid servers with RAM
+run ready.js
 
-solver.js: scans the network and attempts coding contracts with custom logic
+🟡 set.js
 
-buy-servers.js: buys biggest server possible and pushes base scripts
+Purpose: Analyzes rooted servers to pick the best target based on money, security, and hack time. Saves the result to strategy.json.
 
-contracts.js: visibility tool for locating .cct files
+Run with:
 
-h.js, g.js, w.js: single-thread workers; take a target arg
+run set.js
 
-hacknet.js: early-game hacknet investor loop, ROI-based
+🔴 go.js
 
-Shared Data Files:
+Purpose: Reads strategy.json and deploys hack/grow/weaken scripts to all rooted servers based on available RAM and fixed ratios.
 
-strategy.json: object storing best hacking target, score, and mode
+Run with:
 
-{
-  "target": "n00dles",
-  "score": 42.2,
-  "mode": "money",
-  "updated": true,
-  "timestamp": 1710000000000
-}
+run go.js
 
-Script Constraints:
+🧐 solver.js
 
-No Source-File 4: share(), formulas.exe, and singularity functions are disallowed
+Purpose: Scans the entire network for coding contracts and attempts to solve known types using built-in algorithms.
 
-Scripts must manage their own memory and thread limits
+Run with:
 
-No recursive or multithreaded imports
+run solver.js
 
-Execution assumes thread-based parallelism and relies on filesystem state
+🧹 buy-servers.js
 
-Intended Flow (Boot Sequence):
+Purpose: Buys the biggest server you can afford and pushes h/g/w scripts to it immediately.
 
-ready.js → Root & copy executors
+Run with:
 
-set.js → Choose target
+run buy-servers.js
 
-go.js → Push workers
+🧰 contracts.js
 
-This pattern can be used to create an early-game scaffold or refactor a late-game batcher.
+Purpose: Lists all coding contracts across the network with type and remaining tries.
 
-Codex can extend this system by building:
+Run with:
 
-A dynamic batcher or scheduler
+run contracts.js
 
-A pserv load balancer
+🐞 h.js / g.js / w.js
 
-A daemon.js brain script
+Purpose: Direct worker scripts to run hack(), grow(), or weaken() against a target.
 
-Or network visualizers
+Run with:
 
-All context here is valid for Bitburner versions post-2024 and does not assume future expansion or home-RAM sharing mechanics unless specified.
+run h.js [target]
+run g.js [target]
+run w.js [target]
+
+⚙️ hacknet.js
+
+Purpose: Auto-upgrades Hacknet nodes using ROI logic. SF4-safe. Optional utility.
+
+Run with:
+
+run hacknet.js
+
+🧠 Bitburner API Highlights (Non-SF4 Only)
+
+Function
+
+Purpose
+
+ns.scan()
+
+Returns list of directly connected servers
+
+ns.ls(server, extension)
+
+Lists files on a server (e.g. .cct)
+
+ns.getServerMoneyAvailable()
+
+Amount of money currently on a server
+
+ns.getServerRequiredHackingLevel()
+
+Minimum hacking level required to hack a server
+
+ns.hasRootAccess(server)
+
+Boolean — whether you have root access to a server
+
+ns.nuke(server)
+
+Gains root access after opening required ports
+
+ns.exec(script, server, threads, ...args)
+
+Runs a script on a server with args
+
+ns.write(filename, data, mode)
+
+Writes to a text file (used for strategy.json)
+
+ns.read(filename)
+
+Reads content from a file
+
+ns.codingcontract.*
+
+Set of functions for contract scanning, reading, solving
+
+🤖 Bitburner Scripting Environment Primer
+
+Bitburner scripts operate inside a sandboxed JavaScript-like environment provided by the Bitburner game. Code is executed using a limited API exposed through the ns object (short for Netscript). All automation, hacking, server interaction, and contract solving must occur via this API.
+
+Environment Constraints:
+
+No access to the DOM, browser APIs, Node.js modules, or external libraries
+
+No native console.log, fetch, or asynchronous HTTP calls
+
+File I/O occurs via ns.read() and ns.write()
+
+RAM cost is assigned per API call and per script — scripts must be designed around memory limits
+
+Parallel execution is possible via ns.exec() with thread counts
+
+Execution occurs in real-time with ticks and timers (e.g., await ns.sleep(1000))
+
+Script Design Principles:
+
+All scripts must start with /** @param {NS} ns */ to get type hints and enable the ns object
+
+Scripts are modular and independently executable
+
+Shared coordination happens via data files (strategy.json, .txt, etc.)
+
+Worker scripts (h.js, g.js, w.js) are intended to be dispatched remotely to pservs or cracked servers
+
+Source File Restrictions:
+
+Assumes NO Source-File 4: cannot use features like share(), formulas.exe, or singularity-level automation
+
+All solvers and upgrades are written to work without SF4 access
+
+Project Layout Best Practices:
+
+solver.js: handles all contract solving logic
+
+ready.js, set.js, go.js: core target discovery and script distribution trio
+
+buy-servers.js: handles infrastructure scaling
+
+contracts.js: visibility tool only, non-intrusive
+
+Codex integration and GitHub versioning are used to track and evolve script logic over time. Documentation and modularity are prioritized to enable portability and future automation.
 
