@@ -44,3 +44,28 @@ export async function main(ns) {
         await ns.sleep(10000);
     }
 }
+
+function getAllServers(ns) {
+    const seen = new Set();
+    const queue = ["home"];
+    while (queue.length) {
+        const host = queue.shift();
+        if (seen.has(host)) continue;
+        seen.add(host);
+        queue.push(...ns.scan(host));
+    }
+    return [...seen];
+}
+
+function getTargetScore(ns, server) {
+    const maxMoney = ns.getServerMaxMoney(server);
+    const minSec = ns.getServerMinSecurityLevel(server);
+    const currSec = ns.getServerSecurityLevel(server);
+    const hackTime = ns.getHackTime(server);
+
+    const securityPenalty = currSec - minSec;
+    const moneyFactor = maxMoney / 1e6;
+    const timeFactor = 1e5 / hackTime;
+
+    return (moneyFactor * timeFactor) - securityPenalty;
+}
